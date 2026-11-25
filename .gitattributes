@@ -1,0 +1,6 @@
+# Normaliza fim de linha: o Colab grava LF; sem isso, cada save no Colab
+# reescreve o arquivo inteiro no diff por causa do CRLF do Windows.
+*.ipynb text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.py    text eol=lf
