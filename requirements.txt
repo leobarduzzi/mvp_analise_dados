@@ -1,0 +1,12 @@
+# Dependências do MVP — Análise de Dados e Boas Práticas (3W Dataset, evento de hidrato)
+#
+# Versões fixadas para reprodução. Python 3.11+.
+# O notebook imprime as versões efetivas do ambiente na seção 3;
+# se o Colab trouxer uma versão diferente, a do ambiente prevalece.
+
+numpy==2.3.3
+pandas==2.3.2
+pyarrow==26.0.1
+matplotlib==3.10.9
+seaborn==0.13.2
+requests==2.32.5

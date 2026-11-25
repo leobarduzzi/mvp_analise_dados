@@ -1,0 +1,45 @@
+# --- Dados baixados em tempo de execucao ---
+# Os .parquet do 3W Dataset sao baixados por HTTPS (README > Dados).
+# Nao versionar: peso, limite de 100 MB/arquivo do GitHub e rastreabilidade por commit.
+data/
+*.parquet
+*.csv.gz
+
+# --- Saidas intermediarias ---
+resultados/
+exports/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# --- Segredos e tokens (nunca versionar) ---
+.env
+.env.*
+*.pem
+.token
+secrets.json
+
+# --- Editores e sistema ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Nao versionado por decisao ---
+# AGENTS.md  -> contexto interno de trabalho
+# estudo/    -> material de estudo de dominio, nao faz parte da entrega
+AGENTS.md
+estudo/
