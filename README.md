@@ -34,6 +34,16 @@ não permite) concluir a partir dos dados disponíveis.
 
 Cada hipótese declara, no notebook, o que a refutaria *antes* da análise, e a limitação associada.
 
+## Resultados em uma linha
+
+- **H1:** nas 7 instâncias com sensor confiável, `T-TPT` cai de 46,60 °C para 5,45 °C (mediana)
+  entre o bloco normal e o de hidrato, com separação em 6 de 7 poços. Em `T-MON-CKP` a direção é
+  mista (2 de 11 instâncias aquecem no bloco rotulado), e as pressões não têm separação consistente.
+- **H2:** 95,97% das 140.920 linhas rotuladas como hidrato ocorrem fora de Open — 45,48% em Restart
+  e 44,22% em Flushing Diesel.
+
+As evidências, interpretações e limitações completas estão nas Figuras 1–4 do notebook.
+
 ## Objetivo analítico
 
 **Descritivo.** Não há uso preditivo, e isso é uma decisão declarada, não uma omissão:
@@ -82,7 +92,10 @@ RAW = "https://raw.githubusercontent.com/petrobras/3W/cfb6666659e7a36c352f4206fa
 
 1. Abra o notebook pelo badge acima, ou por
    `https://colab.research.google.com/github/leobarduzzi/mvp_analise_dados/blob/main/mvp.ipynb`.
-2. `Ambiente de execução → Executar tudo`.
+2. Para obter **permissão de leitura e escrita** (exigência da entrega), use
+   `Arquivo → Salvar uma cópia no Drive` e compartilhe essa cópia como
+   *"qualquer pessoa com o link pode editar"*. Informe o link do Drive na tarefa do MVP.
+3. `Ambiente de execução → Executar tudo`.
 
 Nenhuma instalação manual é necessária: as bibliotecas usadas já vêm no Colab. A célula da §3
 imprime as versões efetivas do ambiente, para que a execução seja auditável.
@@ -111,6 +124,10 @@ Requer **Python 3.11+**. Depois de instalar, `Kernel → Restart & Run All`.
 ├── README.md          # este arquivo
 ├── requirements.txt   # dependências com versões fixadas
 └── mvp.ipynb          # notebook principal (relatório)
+
+data/                  # ignorado pelo Git: parquet baixados e resumo derivado
+├── 3w/8/*.parquet     # 14 instâncias, obtidas por HTTPS na execução
+└── resumo_por_instancia_classe.csv  # resumo compacto gerado na §5.5
 ```
 
 ---
@@ -118,8 +135,9 @@ Requer **Python 3.11+**. Depois de instalar, `Kernel → Restart & Run All`.
 ## Dependências
 
 Fixadas em [`requirements.txt`](requirements.txt). As versões efetivamente usadas na execução de
-referência são impressas no início do notebook (§3), que é a fonte da verdade em caso de divergência
-com o ambiente do Colab.
+referência são impressas na célula 10 do notebook (§3.1): Python 3.11.9, pandas 2.3.2, NumPy 2.3.3,
+pyarrow 26.0.1, Matplotlib 3.10.9 e seaborn 0.13.2. No Colab as versões podem diferir; a célula
+sempre imprime as do ambiente em uso.
 
 ---
 
@@ -127,8 +145,9 @@ com o ambiente do Colab.
 
 O notebook registra as decisões **D1 a D3** na §5, cada uma no formato exigido: necessidade e
 evidência nos dados, alternativas consideradas (incluindo manter os dados como estão), opção
-escolhida, verificação antes/depois e limitação. Pelo menos uma decisão compara duas alternativas
-com medida de efeito. O resumo consolidado fica na tabela ao final da §5.
+escolhida, verificação antes/depois e limitação. D1 e D2 comparam duas alternativas com medida de
+efeito; D3 compara estatísticas antes e depois. O estado final das visões e as verificações de
+integridade ficam na §5.5.
 
 ---
 
@@ -147,6 +166,7 @@ com medida de efeito. O resumo consolidado fica na tabela ao final da §5.
 | Divisão dos dados e prevenção de vazamento — ou justificativa de não aplicabilidade | §5.1 |
 | Respostas a H1/H2, limitações e próximos passos | §6 |
 | Checklist de entrega preenchido | §7 |
+| Referências e declaração de uso de IA | §8 |
 
 ---
 
@@ -165,7 +185,7 @@ Os limites específicos de cada decisão estão registrados junto a ela, no note
 
 ## Uso de IA
 
-A declaração completa está no notebook (§7). Em resumo: ferramentas de IA foram usadas como apoio
+A declaração completa está no notebook (§8). Em resumo: ferramentas de IA foram usadas como apoio
 técnico em código e organização do repositório; a análise exploratória, a interpretação dos
 resultados e as conclusões são de autoria própria. O autor se responsabiliza por todo o código
 entregue.
