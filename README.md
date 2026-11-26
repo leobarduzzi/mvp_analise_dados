@@ -1,201 +1,127 @@
-# MVP — Análise exploratória e pré-processamento do 3W Dataset (evento de hidrato)
+# Estudo de Sensores Submarinos: Obstrução por Hidrato no 3W Dataset (Evento 8)
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leobarduzzi/mvp_analise_dados/blob/main/mvp.ipynb)
 
-Trabalho da disciplina **Sprint: Análise de Dados e Boas Práticas** (40530010055_20260_02) — PUC-Rio.
+**Aluno:** Leonardo Cesar Barduzzi  
+**Matrícula:** 4052026001555  
+**Curso:** Sprint: Análise de Dados e Boas Práticas (PUC-Rio)  
 
-O notebook [`mvp.ipynb`](mvp.ipynb) é, ao mesmo tempo, o código e o relatório: reúne análise
-exploratória, decisões de pré-processamento, verificações e limitações. **O escopo termina na
-preparação dos dados** — não há treinamento nem comparação de modelos de aprendizado de máquina.
+Este repositório contém o notebook [`mvp.ipynb`](mvp.ipynb), que serve simultaneamente como código executável e relatório técnico do projeto. Ele reúne análise exploratória, diagnóstico de integridade de sensores e decisões fundamentadas de pré-processamento sobre dados reais de poços de petróleo da Petrobras.
 
----
-
-## Problema
-
-Hidratos são estruturas cristalinas que se formam quando água e gás se combinam sob pressão alta e
-temperatura baixa. Em linhas submarinas de produção, eles aderem à parede do tubo e reduzem a
-passagem, podendo bloquear a linha. O problema analisado aqui é: **o que os sinais medidos no poço
-mostram nos períodos em que especialistas rotularam a presença de hidrato**, e o que isso permite (e
-não permite) concluir a partir dos dados disponíveis.
-
-## Unidade de observação
-
-- **Linha:** uma leitura dos sensores do poço em um instante (série temporal).
-- **Instância (um arquivo `.parquet`):** um poço em um episódio de um mesmo evento, com um bloco
-  contíguo de rótulos.
-
-## Perguntas investigáveis
-
-- **H1 — sinal físico:** quando há hidrato, a temperatura (`T-TPT`, `T-JUS-CKP`) se comporta de
-  forma diferente da pressão (`P-TPT`, `P-MON-CKP`)? Ou seja: o resfriamento seria um aviso mais
-  confiável que a queda de pressão?
-- **H2 — contexto operacional:** o rótulo de hidrato ocorre com o poço produzindo normalmente ou
-  durante manobras (parada, circulação de fluido, reinício)? Variáveis: `class` e `state`.
-
-Cada hipótese declara, no notebook, o que a refutaria *antes* da análise, e a limitação associada.
-
-## Resultados em uma linha
-
-- **H1:** nas 7 instâncias com sensor confiável, `T-TPT` cai de 46,60 °C para 5,45 °C (mediana)
-  entre o bloco normal e o de hidrato, com separação em 6 de 7 poços. Em `T-MON-CKP` a direção é
-  mista (2 de 11 instâncias aquecem no bloco rotulado), e as pressões não têm separação consistente.
-- **H2:** 95,97% das 140.920 linhas rotuladas como hidrato ocorrem fora de Open — 45,48% em Restart
-  e 44,22% em Flushing Diesel.
-
-As evidências, interpretações e limitações completas estão nas Figuras 1–4 do notebook.
-
-## Objetivo analítico
-
-**Descritivo.** Não há uso preditivo, e isso é uma decisão declarada, não uma omissão:
-
-- cada instância real traz exatamente um bloco por classe, sempre na mesma ordem (normal →
-  transitório → estacionário), então um modelo avaliado por observação aprenderia a posição no
-  arquivo, não a assinatura física do evento;
-- a única divisão honesta seria por poço, e o conjunto de poços é pequeno — poucos grupos
-  independentes para avaliação;
-- o desbalanceamento é concentrado em poucos arquivos.
-
-A consequência para o pré-processamento (sem treino/teste, não há parâmetro a ajustar em separado) e
-a justificativa correspondente no checklist estão na §5.1 do notebook.
+Seguindo as diretrizes do MVP, **o trabalho termina na preparação e qualificação dos dados**, sem treinamento de modelos de machine learning.
 
 ---
 
-## Dados
+## 1. Contexto e Problema
 
-| Item | Valor |
+Em linhas de produção submarinas de petróleo e gás em águas profundas, água e gás sob alta pressão e baixa temperatura podem formar hidratos — estruturas sólidas parecidas com gelo que grudam no interior dos dutos. Esse acúmulo reduz a passagem do fluido e pode causar o bloqueio completo da linha, gerando altos custos de desobstrução e risco de parada na plataforma.
+
+O objetivo do projeto é **analisar as medições dos sensores de poços reais da Petrobras nos períodos rotulados com hidrato**, investigando:
+1. Quais variáveis físicas (temperatura ou pressão) realmente sinalizam a formação da obstrução de forma clara;
+2. Em quais momentos da operação do poço o hidrato costuma se manifestar.
+
+---
+
+## 2. Unidade de Observação e Recorte
+
+- **Linha:** uma leitura instantânea dos sensores a cada 1 segundo (amostragem em 1 Hz).
+- **Instância (arquivo `.parquet`):** um episódio contínuo em um poço específico, dividido em blocos cronológicos de operação normal, transição e hidrato consolidado.
+- **Recorte:** 14 instâncias reais de poços de petróleo (`WELL-*`), cobrindo 9 poços distintos e 4.809.035 leituras temporais gravadas entre 2011 e 2023.
+
+---
+
+## 3. Hipóteses Investigadas e Resultados Principais
+
+- **Hipótese 1 ($H_1$) — A temperatura sinaliza o hidrato melhor que a pressão?**
+  - *Resultado:* **Confirmada** para o sensor da árvore submarina (`T-TPT`). Nas 7 instâncias com medições válidas, a temperatura mediana cai de 46,60 °C (normal) para 5,45 °C (com hidrato), com separação consistente (AUC $\ge 0,90$) em 6 dos 7 poços. Em contrapartida, as pressões variam muito entre poços e tendem a subir na árvore (acumulando contrapressão).
+- **Hipótese 2 ($H_2$) — O hidrato aparece na produção normal ou durante manobras?**
+  - *Resultado:* **Confirmada**. Das 140.920 leituras com hidrato consolidado, **95,97% ocorrem durante manobras operacionais**: 45,48% em procedimentos de reinício (*Restart*), 44,22% em lavagem de linha com diesel (*Flushing*) e 6,27% em injeção sob pressão (*Bullheading*), contra apenas 4,03% em produção contínua (*Open*).
+
+As análises gráficas completas (curvas ECDF, dispersão poço a poço, gráfico de barras em escala logarítmica e linha do tempo de episódio) e suas limitações estão detalhadas nas Seções 4 e 6 do notebook.
+
+---
+
+## 4. Por que o Trabalho é Estritamente Descritivo?
+
+A escolha por não aplicar modelos preditivos supervisionados nesta etapa se apoia em características da base:
+1. Cada arquivo real traz blocos contínuos de cada classe em sequência; dividir por linhas faria o modelo aprender a ordem temporal do arquivo em vez do sinal físico;
+2. A divisão correta teria de ser feita por poço, mas temos apenas 9 poços reais disponíveis no recorte — amostra pequena demais para validação confiável;
+3. O hidrato é um evento raro (apenas 2,93% do volume total de dados).
+
+Por isso, não há divisão de treino e teste e nenhum parâmetro é aprendido para aplicar depois, o que elimina qualquer risco de vazamento de dados (*data leakage*).
+
+---
+
+## 5. Fonte e Acesso aos Dados
+
+| Item | Detalhe |
 |---|---|
-| Base | **3W Dataset**, versão **2.0.0** |
-| Origem | Petrobras/CENPES e UFRJ — <https://github.com/petrobras/3W> |
-| Versão fixada | commit [`cfb6666`](https://github.com/petrobras/3W/tree/cfb6666659e7a36c352f4206fabbab320f5939c9) |
-| Recorte | diretório `dataset/8` (hidrato na linha de produção), instâncias reais `WELL-*` |
-| Condições de uso | dados sob **CC BY 4.0** (atribuição obrigatória); código do projeto original sob Apache 2.0 |
-| Acesso | HTTPS público, **sem contas ou credenciais** |
+| **Base** | *3W Dataset*, versão **2.0.0** (Petrobras / CENPES e UFRJ) |
+| **Repositório oficial** | <https://github.com/petrobras/3W> |
+| **Versão fixada** | commit [`cfb6666`](https://github.com/petrobras/3W/tree/cfb6666659e7a36c352f4206fabbab320f5939c9) |
+| **Licença** | Creative Commons Attribution 4.0 (**CC BY 4.0**) |
+| **Acesso** | Download automatizado via HTTPS direto (*raw storage*), sem login ou credenciais |
 
-Por que o evento 8: é o evento com maior cobertura de poços entre os que têm o rótulo de interesse,
-o que dá alguma margem para comparações entre poços. Os demais eventos e o que cada um inviabiliza
-estão discutidos no notebook (§1.1).
-
-**Os arquivos `.parquet` não são versionados neste repositório.** Eles são baixados por HTTPS
-durante a execução do notebook (§3), a partir da URL *raw* do repositório original, fixada no
-commit acima. Isso mantém o repositório leve e garante que os dados usados sejam exatamente os da
-versão declarada.
-
-```python
-RAW = "https://raw.githubusercontent.com/petrobras/3W/cfb6666659e7a36c352f4206fabbab320f5939c9/dataset/8"
-```
+Os arquivos `.parquet` brutos não são versionados no Git para manter o repositório leve. Eles são baixados automaticamente na pasta local `data/3w/8/` durante a execução do notebook.
 
 ---
 
-## Como executar
+## 6. Como Executar
 
-### Google Colab (recomendado)
+### No Google Colab (Recomendado)
 
-1. Abra o notebook pelo badge acima, ou por
+1. Abra o notebook pelo botão badge acima ou pelo link:  
    `https://colab.research.google.com/github/leobarduzzi/mvp_analise_dados/blob/main/mvp.ipynb`.
-2. Para obter **permissão de leitura e escrita** (exigência da entrega), use
-   `Arquivo → Salvar uma cópia no Drive` e compartilhe essa cópia como
-   *"qualquer pessoa com o link pode editar"*. Informe o link do Drive na tarefa do MVP.
-3. `Ambiente de execução → Executar tudo`.
+2. Para salvar com permissão de edição (exigência da entrega): vá em `Arquivo → Salvar uma cópia no Drive` e compartilhe o link da sua cópia com permissão de edição para qualquer pessoa com o link.
+3. No menu, clique em `Ambiente de execução → Executar tudo`.
 
-Nenhuma instalação manual é necessária: as bibliotecas usadas já vêm no Colab. A célula da §3
-imprime as versões efetivas do ambiente, para que a execução seja auditável.
-
-### Localmente
+### Em Ambiente Local
 
 ```bash
 git clone https://github.com/leobarduzzi/mvp_analise_dados.git
 cd mvp_analise_dados
-python -m venv .venv && . .venv/bin/activate    # Windows: .venv\Scripts\activate
+
+# Criar e ativar ambiente virtual
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+# Instalar dependências
 pip install -r requirements.txt
+
+# Abrir o notebook
 jupyter lab mvp.ipynb
 ```
 
-Requer **Python 3.11+**. Depois de instalar, `Kernel → Restart & Run All`.
-
-> O download dos arquivos do evento 8 leva alguns minutos na primeira execução. As células são
-> idempotentes: se os arquivos já estiverem em cache local, o download é ignorado.
+*Requisitos:* Python 3.11+. As versões das bibliotecas estão fixadas em [`requirements.txt`](requirements.txt).
 
 ---
 
-## Estrutura do repositório
+## 7. Estrutura do Repositório
 
 ```
 .
-├── README.md          # este arquivo
-├── requirements.txt   # dependências com versões fixadas
-└── mvp.ipynb          # notebook principal (relatório)
-
-data/                  # ignorado pelo Git: parquet baixados e resumo derivado
-├── 3w/8/*.parquet     # 14 instâncias, obtidas por HTTPS na execução
-└── resumo_por_instancia_classe.csv  # resumo compacto gerado na §5.5
+├── README.md               # Apresentação do projeto e guia de execução
+├── requirements.txt        # Dependências com versões fixadas
+├── mvp.ipynb               # Notebook principal (código e relatório)
+│
+└── data/                   # Pasta de dados (ignorada no Git)
+    ├── 3w/8/*.parquet      # 14 instâncias brutas baixadas via HTTPS
+    └── resumo_por_instancia_classe.csv  # Tabela resumo gerada na Seção 5.5
 ```
 
 ---
 
-## Dependências
+## 8. Decisões de Pré-Processamento (D1 a D3)
 
-Fixadas em [`requirements.txt`](requirements.txt). As versões efetivamente usadas na execução de
-referência são impressas na célula 10 do notebook (§3.1): Python 3.11.9, pandas 2.3.2, NumPy 2.3.3,
-pyarrow 26.0.1, Matplotlib 3.10.9 e seaborn 0.13.2. No Colab as versões podem diferir; a célula
-sempre imprime as do ambiente em uso.
-
----
-
-## Decisões de pré-processamento
-
-O notebook registra as decisões **D1 a D3** na §5, cada uma no formato exigido: necessidade e
-evidência nos dados, alternativas consideradas (incluindo manter os dados como estão), opção
-escolhida, verificação antes/depois e limitação. D1 e D2 comparam duas alternativas com medida de
-efeito; D3 compara estatísticas antes e depois. O estado final das visões e as verificações de
-integridade ficam na §5.5.
+- **Decisão D1 (Remover colunas sem nenhuma medição):** Exclusão de 5 variáveis com 100% de ausência (`P-JUS-BS`, `QBS`, `T-JUS-CKP`, `P-MON-SDV-P` e `PT-P`), evitando inventar mais de 24 milhões de números sem variância.
+- **Decisão D2 (Manter leituras consecutivas idênticas):** Conservação de 24.775 linhas seguidas com mesmo valor decorrentes da resolução do sensor a cada segundo, preservando a grade temporal regular de 1 s sem criar buracos na série histórica.
+- **Decisão D3 (Tratar códigos de sensor com erro como ausência):** Conversão de 1.439.863 valores absurdos de falha (como $-99,99$ e $-25$ °C) em `NaN` sem imputação artificial, restaurando médias físicas reais (ex.: média de `T-PDG` corrigida de $-10^{19}$ para 83,1 °C).
 
 ---
 
-## Mapa do notebook
+## 9. Declaração de Uso de IA e Autoria
 
-| Item do checklist | Onde está |
-|---|---|
-| Problema, unidade de observação, H1/H2 e objetivo analítico | §1 |
-| Origem, versão, condições de uso, recortes e dicionário das variáveis | §2 |
-| Dimensões, tipos, inspeção inicial | §4.1 |
-| Ausências, duplicidades, inconsistências e valores extremos | §4.1 |
-| Distribuições e relações relevantes | §4.2 e §4.3 |
-| Interpretações com evidência após cada figura | §4.2 e §4.3 |
-| Decisões D1–D3 e comparação entre alternativas | §5.2 a §5.4 |
-| Transformações (ou manutenção justificada) e verificações antes/depois | §5 |
-| Divisão dos dados e prevenção de vazamento — ou justificativa de não aplicabilidade | §5.1 |
-| Respostas a H1/H2, limitações e próximos passos | §6 |
-| Checklist de entrega preenchido | §7 |
-| Referências e declaração de uso de IA | §8 |
-
----
-
-## Limitações conhecidas
-
-- O dataset **não mede vazão de produção**, o que impede normalizar perda de carga e distinguir
-  obstrução de queda de produção. Isso é discutido como limitação, não como teste de hipótese.
-- Os rótulos vêm de análise de especialistas sobre os mesmos sinais aqui analisados; associação
-  entre rótulo e variável não é prova de causalidade.
-- A temperatura da árvore submarina é influenciada pela temperatura do leito marinho, o que pode
-  mascarar a variação associada ao evento.
-
-Os limites específicos de cada decisão estão registrados junto a ela, no notebook.
-
----
-
-## Uso de IA
-
-A declaração completa está no notebook (§8). Em resumo: ferramentas de IA foram usadas como apoio
-técnico em código e organização do repositório; a análise exploratória, a interpretação dos
-resultados e as conclusões são de autoria própria. O autor se responsabiliza por todo o código
-entregue.
-
----
-
-## Referências
-
-- VARGAS, R. E. V. et al. **A realistic and public dataset with rare undesirable real events in oil
-  wells**. *Journal of Petroleum Science and Engineering*, 2019. (3W Dataset, versão 1.0.0)
-- PETROBRAS/CENPES; UFRJ. **3W Dataset — versão 2.0.0**. GitHub, 2024.
-  <https://github.com/petrobras/3W> (acesso em nov. 2026). Licença dos dados: CC BY 4.0.
-- Demais fontes de domínio e metodologia estão listadas na seção de referências do notebook.
+Ferramentas de IA foram usadas apenas como apoio operacional para estruturação de código Python, formatação tabular e revisão ortográfica. A escolha das hipóteses, a fundamentação de engenharia de poço, a interpretação crítica dos resultados numéricos e as decisões de tratamento dos dados são de autoria própria do aluno Leonardo Cesar Barduzzi, que assume total responsabilidade pelo trabalho.
